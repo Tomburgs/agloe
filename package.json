@@ -1,0 +1,28 @@
+{
+    "name": "search-it",
+    "version": "1.0.0",
+    "author": "Toms Burgmanis <toms.burgmanis@gmail.com>",
+    "license": "MIT",
+    "scripts": {
+        "dev": "NODE_ENV=development next",
+        "start": "NODE_ENV=production next start",
+        "build": "yarn build-go && yarn build-frontend",
+        "build-frontend": "next build",
+        "build-go": "cd go && GOOS=js GOARCH=wasm go build -o main.wasm"
+    },
+    "dependencies": {
+        "next": "^10.0.5",
+        "react": "^17.0.1",
+        "react-dom": "^17.0.1",
+        "sass": "^1.32.5",
+        "typescript": "^4.1.3",
+        "wasm-loader": "^1.3.0"
+    },
+    "devDependencies": {
+        "@types/css-modules": "^1.0.1",
+        "@types/golang-wasm": "^1.15.0",
+        "@types/node": "^14.14.22",
+        "@types/react": "^17.0.0",
+        "@types/react-dom": "^17.0.0"
+    }
+}
