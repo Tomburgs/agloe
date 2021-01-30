@@ -1,0 +1,6 @@
+{
+    "go.goplsEnv": {
+        "GOOS": "js",
+        "GOARCH": "wasm"
+    }
+}

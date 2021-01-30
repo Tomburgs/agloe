@@ -6,48 +6,71 @@ import (
     "log"
     "time"
     "runtime"
+    "syscall/js"
     "net/http"
     "github.com/qedus/osmpbf"
 );
 
 func main() {
-    fmt.Println("Hej Hej!");
+    js.Global().Set("search", js.FuncOf(search));
 
-    start := time.Now();
+    select {};
+}
 
-    file := getFile("/oldtown.osm.pbf");
-    decoder := startDecoder(file);
+func search(this js.Value, args []js.Value) interface{} {
+    readableStream := js.Global().Get("ReadableStream");
+    readableStreamConstructor := map[string]interface{}{
+        "start": js.FuncOf(stream),
+    };
+    //readableStreamConstructor := js.Global().Get("Object").New();
+    //readableStreamConstructor.Set("start", js.FuncOf(stream));
 
-    defer file.Close();
+    return readableStream.New(readableStreamConstructor);
+}
 
-    var nc, wc, rc uint64;
+func stream(this js.Value, args []js.Value) interface{} {
+    controller := args[0];
 
-    for {
-        if v, err := decoder.Decode(); err == io.EOF {
-            break;
-        } else if err != nil {
-            log.Fatal(err);
-        } else {
-            switch v := v.(type) {
-            case *osmpbf.Node:
-                // Process Node v.
-                nc++;
-            case *osmpbf.Way:
-                // Process Way v.
-                wc++;
-            case *osmpbf.Relation:
-                // Process Relation v.
-                rc++;
-            default:
-                log.Fatalf("unknown type %T\n", v);
+    go func() {
+        start := time.Now();
+        var nc, wc, rc uint64;
+
+        file := getFile("/oldtown.osm.pbf");
+        decoder := startDecoder(file);
+
+        defer file.Close();
+
+        for {
+            if v, err := decoder.Decode(); err == io.EOF {
+                break;
+            } else if err != nil {
+                log.Fatal(err);
+            } else {
+                switch v := v.(type) {
+                case *osmpbf.Node:
+                    // Process Node v.
+                    nc++;
+                case *osmpbf.Way:
+                    // Process Way v.
+                    wc++;
+                case *osmpbf.Relation:
+                    // Process Relation v.
+                    rc++;
+                default:
+                    log.Fatalf("unknown type %T\n", v);
+                }
             }
+
+            controller.Call("enqueue", fmt.Sprintf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc));
         }
-    }
 
-    elapsed := time.Since(start);
+        elapsed := time.Since(start);
 
-    fmt.Printf("Executed in %s\n", elapsed);
-    fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc);
+        fmt.Printf("Executed in %s\n", elapsed);
+        fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc);
+    }();
+
+    return nil;
 }
 
 func getFile(filename string) io.ReadCloser {

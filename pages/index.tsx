@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import styles from './index.module.scss';
 
 const instantiate = async (request: Promise<Response>, importObject: WebAssembly.Imports) => {
     if (WebAssembly.instantiateStreaming) {
@@ -11,23 +12,30 @@ const instantiate = async (request: Promise<Response>, importObject: WebAssembly
     return WebAssembly.instantiate(source, importObject);
 };
 
-const initializeWasm = async () => {
+const initializeWasm = async (setIsInitialized: (isInitialized: boolean) => void) => {
     const go = new Go();
 
     const wasm = fetch('/main.wasm');
     const { instance } = await instantiate(wasm, go.importObject);
 
     go.run(instance);
+    setIsInitialized(true);
 };
 
 export default function Home(): JSX.Element {
+    const [isInitialized, setIsInitialized] = useState(false);
+
     useEffect(() => {
-        initializeWasm();
-    });
+        initializeWasm(setIsInitialized);
+    }, []);
+
+    console.log(isInitialized);
 
     return (
-        <div>
-            <h1>Hej Hej!</h1>
-        </div>
+        <main className={ styles.main }>
+            <div className={ styles.wrapper }>
+                <input className={ styles.input } />
+            </div>
+        </main>
     );
 }
