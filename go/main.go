@@ -4,6 +4,7 @@ import (
     "fmt"
     "io"
     "log"
+    "time"
     "runtime"
     "net/http"
     "github.com/qedus/osmpbf"
@@ -12,23 +13,12 @@ import (
 func main() {
     fmt.Println("Hej Hej!");
 
-    resp, err := http.Get("/oldtown.osm.pbf");
+    start := time.Now();
 
-    if err != nil {
-        log.Fatal(err);
-    }
+    file := getFile("/oldtown.osm.pbf");
+    decoder := startDecoder(file);
 
-    defer resp.Body.Close()
-
-    decoder := osmpbf.NewDecoder(resp.Body);
-
-    decoder.SetBufferSize(osmpbf.MaxBlobSize);
-
-    err = decoder.Start(runtime.GOMAXPROCS(-1));
-
-    if (err != nil) {
-        log.Fatal(err);
-    }
+    defer file.Close();
 
     var nc, wc, rc uint64;
 
@@ -54,5 +44,31 @@ func main() {
         }
     }
 
+    elapsed := time.Since(start);
+
+    fmt.Printf("Executed in %s\n", elapsed);
     fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc);
+}
+
+func getFile(filename string) io.ReadCloser {
+    resp, err := http.Get(filename);
+
+    if err != nil {
+        log.Fatal(err);
+    }
+
+    return resp.Body;
+}
+
+func startDecoder(file io.ReadCloser) *osmpbf.Decoder {
+    decoder := osmpbf.NewDecoder(file);
+    decoder.SetBufferSize(osmpbf.MaxBlobSize);
+
+    err := decoder.Start(runtime.GOMAXPROCS(-1));
+
+    if err != nil {
+        log.Fatal(err);
+    }
+
+    return decoder;
 }
