@@ -11,6 +11,8 @@ import (
     "github.com/qedus/osmpbf"
 );
 
+var searchTerm string;
+
 func main() {
     js.Global().Set("search", js.FuncOf(search));
 
@@ -18,12 +20,12 @@ func main() {
 }
 
 func search(this js.Value, args []js.Value) interface{} {
+    searchTerm = args[0].String();
+
     readableStream := js.Global().Get("ReadableStream");
     readableStreamConstructor := map[string]interface{}{
         "start": js.FuncOf(stream),
     };
-    //readableStreamConstructor := js.Global().Get("Object").New();
-    //readableStreamConstructor.Set("start", js.FuncOf(stream));
 
     return readableStream.New(readableStreamConstructor);
 }
@@ -49,13 +51,19 @@ func stream(this js.Value, args []js.Value) interface{} {
                 switch v := v.(type) {
                 case *osmpbf.Node:
                     // Process Node v.
-                    nc++;
+                    if (isValidEntity(v.Tags)) {
+                        nc++;
+                    }
                 case *osmpbf.Way:
                     // Process Way v.
-                    wc++;
+                    if (isValidEntity(v.Tags)) {
+                        wc++;
+                    }
                 case *osmpbf.Relation:
                     // Process Relation v.
-                    rc++;
+                    if (isValidEntity(v.Tags)) {
+                        rc++;
+                    }
                 default:
                     log.Fatalf("unknown type %T\n", v);
                 }
