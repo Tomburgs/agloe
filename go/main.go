@@ -52,7 +52,8 @@ func stream(this js.Value, args []js.Value) interface{} {
                 case *osmpbf.Node:
                     // Process Node v.
                     if (isValidEntity(v.Tags)) {
-                        nc++;
+                        node := createNode(v);
+                        controller.Call("enqueue", node);
                     }
                 case *osmpbf.Way:
                     // Process Way v.
