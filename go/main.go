@@ -8,99 +8,104 @@ import (
     "runtime"
     "syscall/js"
     "net/http"
+    "agloe/idb"
     "github.com/qedus/osmpbf"
-);
+)
 
-var searchTerm string;
+var searchTerm string
 
 func main() {
-    js.Global().Set("search", js.FuncOf(search));
+    db := idb.NewDB();
+    db.Test();
 
-    select {};
+    js.Global().Set("search", js.FuncOf(search))
+
+    select {}
 }
 
 func search(this js.Value, args []js.Value) interface{} {
-    searchTerm = args[0].String();
+    searchTerm = args[0].String()
 
-    readableStream := js.Global().Get("ReadableStream");
+    readableStream := js.Global().Get("ReadableStream")
     readableStreamConstructor := map[string]interface{}{
         "start": js.FuncOf(stream),
-    };
+    }
 
-    return readableStream.New(readableStreamConstructor);
+    return readableStream.New(readableStreamConstructor)
 }
 
 func stream(this js.Value, args []js.Value) interface{} {
-    controller := args[0];
+    controller := args[0]
 
     go func() {
-        start := time.Now();
-        var nc, wc, rc uint64;
+        start := time.Now()
+        var nc, wc, rc uint64
 
-        file := getFile("/oldtown.osm.pbf");
-        decoder := startDecoder(file);
+        file := getFile("/oldtown.osm.pbf")
+        decoder := startDecoder(file)
 
-        defer file.Close();
+        defer file.Close()
 
         for {
             if v, err := decoder.Decode(); err == io.EOF {
-                break;
+                break
             } else if err != nil {
-                log.Fatal(err);
+                log.Fatal(err)
             } else {
                 switch v := v.(type) {
                 case *osmpbf.Node:
                     // Process Node v.
                     if (isValidEntity(v.Tags)) {
-                        node := createNode(v);
-                        controller.Call("enqueue", node);
+                        node := createNode(v)
+                        controller.Call("enqueue", node)
                     }
                 case *osmpbf.Way:
                     // Process Way v.
                     if (isValidEntity(v.Tags)) {
-                        wc++;
+                        way := createWay(v)
+                        controller.Call("enqueue", way)
                     }
                 case *osmpbf.Relation:
                     // Process Relation v.
                     if (isValidEntity(v.Tags)) {
-                        rc++;
+                        rc++
                     }
                 default:
-                    log.Fatalf("unknown type %T\n", v);
+                    log.Fatalf("unknown type %T\n", v)
                 }
             }
 
-            controller.Call("enqueue", fmt.Sprintf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc));
+            controller.Call("enqueue", fmt.Sprintf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc))
         }
 
-        elapsed := time.Since(start);
+        elapsed := time.Since(start)
 
-        fmt.Printf("Executed in %s\n", elapsed);
-        fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc);
-    }();
+        fmt.Printf("Executed in %s\n", elapsed)
+        fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
+    }()
 
-    return nil;
+    return nil
 }
 
 func getFile(filename string) io.ReadCloser {
-    resp, err := http.Get(filename);
+    resp, err := http.Get(filename)
 
     if err != nil {
-        log.Fatal(err);
+        log.Fatal(err)
     }
 
-    return resp.Body;
+    return resp.Body
 }
 
 func startDecoder(file io.ReadCloser) *osmpbf.Decoder {
-    decoder := osmpbf.NewDecoder(file);
-    decoder.SetBufferSize(osmpbf.MaxBlobSize);
+    decoder := osmpbf.NewDecoder(file)
+    decoder.SetBufferSize(osmpbf.MaxBlobSize)
 
-    err := decoder.Start(runtime.GOMAXPROCS(-1));
+    err := decoder.Start(runtime.GOMAXPROCS(-1))
 
     if err != nil {
-        log.Fatal(err);
+        log.Fatal(err)
     }
 
-    return decoder;
+    return decoder
 }

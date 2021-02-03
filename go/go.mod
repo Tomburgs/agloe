@@ -1,4 +1,4 @@
-module search-it
+module agloe
 
 go 1.15
 
