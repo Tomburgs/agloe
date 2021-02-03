@@ -17,7 +17,7 @@ func NewDB() *IDB {
     idbOpenReq := idb.Call("open", DB_NAME, DB_VERSION)
 
     setup := &Setup{
-        db: make(chan js.Value),
+        db: make(chan js.Value, 2),
     }
 
     idbOpenReq.Set("onerror", js.FuncOf(setup.handleError))
