@@ -48,6 +48,7 @@ func stream(this js.Value, args []js.Value) interface{} {
 
         for {
             if v, err := decoder.Decode(); err == io.EOF {
+                controller.Call("close")
                 break
             } else if err != nil {
                 log.Fatal(err)
