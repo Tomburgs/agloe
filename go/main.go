@@ -1,9 +1,9 @@
 package main
 
 import (
-    "fmt"
     "io"
     "log"
+    "fmt"
     "time"
     "syscall/js"
     "agloe/idb"
@@ -40,50 +40,37 @@ func stream(this js.Value, args []js.Value) interface{} {
 
     go func() {
         start := time.Now()
-        var nc, wc, rc uint64
 
         p.FetchFile("oldtown.osm.pbf")
-        d := p.StartDecoder()
+        p.StartDecoder()
 
         defer p.Close()
 
         for {
-            if v, err := d.Decode(); err == io.EOF {
+            entity, err := p.Parse()
+
+            if err == io.EOF {
                 controller.Call("close")
                 break
             } else if err != nil {
                 log.Fatal(err)
             } else {
-                switch v := v.(type) {
+                switch entity := entity.(type) {
                 case *osmpbf.Node:
-                    // Process Node v.
-                    if (p.IsValidEntity(v.Tags)) {
-                        node := createNode(v)
-                        controller.Call("enqueue", node)
-                    }
+                    node := createNode(entity)
+                    controller.Call("enqueue", node)
                 case *osmpbf.Way:
-                    // Process Way v.
-                    if (p.IsValidEntity(v.Tags)) {
-                        way := createWay(v)
-                        controller.Call("enqueue", way)
-                    }
+                    way := createWay(entity)
+                    controller.Call("enqueue", way)
                 case *osmpbf.Relation:
-                    // Process Relation v.
-                    if (p.IsValidEntity(v.Tags)) {
-                        rc++
-                    }
-                default:
-                    log.Fatalf("unknown type %T\n", v)
+                    // TOOD: Create relations entity
                 }
             }
-
-            controller.Call("enqueue", fmt.Sprintf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc))
         }
 
         elapsed := time.Since(start)
 
         fmt.Printf("Executed in %s\n", elapsed)
-        fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
     }()
 
     return nil

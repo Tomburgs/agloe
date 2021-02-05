@@ -3,6 +3,7 @@ package parser
 import (
     "io"
     "log"
+    "errors"
     "runtime"
     "strings"
     "net/http"
@@ -63,4 +64,33 @@ func (p *Parser) StartDecoder() *osmpbf.Decoder {
     p.decoder = decoder
 
     return decoder
+}
+
+func (p *Parser) Parse() (interface{}, error) {
+    decoder := p.decoder
+    entity, err := decoder.Decode()
+
+    if err != nil {
+        return nil, err
+    }
+
+    switch entity := entity.(type) {
+        case *osmpbf.Node:
+            if (p.IsValidEntity(entity.Tags)) {
+                return entity, nil
+            }
+        case *osmpbf.Way:
+            if (p.IsValidEntity(entity.Tags)) {
+                return entity, nil
+            }
+        case *osmpbf.Relation:
+            if (p.IsValidEntity(entity.Tags)) {
+                return entity, nil
+            }
+        default:
+            err := errors.New("unknown type")
+            return nil, err
+    }
+
+    return nil, nil
 }

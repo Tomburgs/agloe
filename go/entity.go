@@ -1,6 +1,7 @@
 package main
 
 import (
+    "syscall/js"
     "encoding/json"
     "github.com/qedus/osmpbf"
 )
@@ -25,19 +26,25 @@ type Way struct {
     Nodes []map[string]string `json:"nodes,omitempty"`
 }
 
-func createNode(node *osmpbf.Node) string {
+func createNode(node *osmpbf.Node) js.Value {
     entity := Entity{node.ID, "node", node.Tags["name"], node.Tags}
     marshal := Node{&entity, node.Lat, node.Lon}
 
     json, _ := json.Marshal(marshal)
 
-    return string(json)
+    return createJSObject(string(json))
 }
 
-func createWay(way *osmpbf.Way) string {
+func createWay(way *osmpbf.Way) js.Value {
     entity := Entity{way.ID, "way", way.Tags["name"], way.Tags}
 
     json, _ := json.Marshal(entity)
 
-    return string(json)
+    return createJSObject(string(json))
+}
+
+func createJSObject(entity string) js.Value {
+    JSON := js.Global().Get("JSON")
+
+    return JSON.Call("parse", entity)
 }
