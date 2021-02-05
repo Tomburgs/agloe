@@ -5,14 +5,13 @@ import (
     "io"
     "log"
     "time"
-    "runtime"
     "syscall/js"
-    "net/http"
     "agloe/idb"
+    "agloe/parser"
     "github.com/qedus/osmpbf"
 )
 
-var searchTerm string
+var p *parser.Parser
 
 func main() {
     db := idb.NewDB();
@@ -24,7 +23,9 @@ func main() {
 }
 
 func search(this js.Value, args []js.Value) interface{} {
-    searchTerm = args[0].String()
+    search := args[0].String()
+    p = parser.NewParser()
+    p.SetSearch(search)
 
     readableStream := js.Global().Get("ReadableStream")
     readableStreamConstructor := map[string]interface{}{
@@ -41,13 +42,13 @@ func stream(this js.Value, args []js.Value) interface{} {
         start := time.Now()
         var nc, wc, rc uint64
 
-        file := getFile("/oldtown.osm.pbf")
-        decoder := startDecoder(file)
+        p.FetchFile("oldtown.osm.pbf")
+        d := p.StartDecoder()
 
-        defer file.Close()
+        defer p.Close()
 
         for {
-            if v, err := decoder.Decode(); err == io.EOF {
+            if v, err := d.Decode(); err == io.EOF {
                 controller.Call("close")
                 break
             } else if err != nil {
@@ -56,19 +57,19 @@ func stream(this js.Value, args []js.Value) interface{} {
                 switch v := v.(type) {
                 case *osmpbf.Node:
                     // Process Node v.
-                    if (isValidEntity(v.Tags)) {
+                    if (p.IsValidEntity(v.Tags)) {
                         node := createNode(v)
                         controller.Call("enqueue", node)
                     }
                 case *osmpbf.Way:
                     // Process Way v.
-                    if (isValidEntity(v.Tags)) {
+                    if (p.IsValidEntity(v.Tags)) {
                         way := createWay(v)
                         controller.Call("enqueue", way)
                     }
                 case *osmpbf.Relation:
                     // Process Relation v.
-                    if (isValidEntity(v.Tags)) {
+                    if (p.IsValidEntity(v.Tags)) {
                         rc++
                     }
                 default:
@@ -86,27 +87,4 @@ func stream(this js.Value, args []js.Value) interface{} {
     }()
 
     return nil
-}
-
-func getFile(filename string) io.ReadCloser {
-    resp, err := http.Get(filename)
-
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    return resp.Body
-}
-
-func startDecoder(file io.ReadCloser) *osmpbf.Decoder {
-    decoder := osmpbf.NewDecoder(file)
-    decoder.SetBufferSize(osmpbf.MaxBlobSize)
-
-    err := decoder.Start(runtime.GOMAXPROCS(-1))
-
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    return decoder
 }

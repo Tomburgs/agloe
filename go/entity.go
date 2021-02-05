@@ -1,7 +1,6 @@
 package main
 
 import (
-    "strings"
     "encoding/json"
     "github.com/qedus/osmpbf"
 )
@@ -41,10 +40,4 @@ func createWay(way *osmpbf.Way) string {
     json, _ := json.Marshal(entity)
 
     return string(json)
-}
-
-func isValidEntity(Tags map[string]string) bool {
-    name, ok := Tags["name"]
-
-    return ok && strings.Contains(name, searchTerm)
 }
