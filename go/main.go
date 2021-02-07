@@ -11,11 +11,15 @@ import (
     "github.com/qedus/osmpbf"
 )
 
+const DEFAULT_FILENAME = "oldtown.osm.pbf"
+
 var p *parser.Parser
 
 func main() {
     db := idb.NewDB();
     db.Test();
+
+    index()
 
     js.Global().Set("search", js.FuncOf(search))
 
@@ -41,7 +45,7 @@ func stream(this js.Value, args []js.Value) interface{} {
     go func() {
         start := time.Now()
 
-        p.FetchFile("oldtown.osm.pbf")
+        p.FetchFile(DEFAULT_FILENAME)
         p.StartDecoder()
 
         defer p.Close()
@@ -63,7 +67,7 @@ func stream(this js.Value, args []js.Value) interface{} {
                     way := createWay(entity)
                     controller.Call("enqueue", way)
                 case *osmpbf.Relation:
-                    // TOOD: Create relations entity
+                    // TODO: Create relations entity
                 }
             }
         }
