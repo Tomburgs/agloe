@@ -5,8 +5,12 @@ import (
     "syscall/js"
 )
 
-const DB_NAME = "agloe"
-const DB_VERSION = 1
+const (
+    DB_NAME = "agloe"
+    DB_VERSION = 1
+    DB_OBJECT_STORE_REL = "relations"
+    DB_OBJECT_STORE_INDEX = "by_nodeId"
+)
 
 type IDB struct {
     db js.Value

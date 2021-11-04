@@ -5,8 +5,6 @@ import (
     "syscall/js"
 )
 
-const DB_OBJECT_STORE_REL = "relations"
-
 type Setup struct {
     db chan js.Value
 }
@@ -32,7 +30,7 @@ func (s *Setup) handleUpgrade(this js.Value, args []js.Value) interface{} {
 
     if (oldVersion < 1) {
         store := db.Call("createObjectStore", DB_OBJECT_STORE_REL, map[string]interface{}{"keyPath": "nodeId"})
-        store.Call("createIndex", "by_nodeId", "nodeId", map[string]interface{}{"unique": true})
+        store.Call("createIndex", DB_OBJECT_STORE_INDEX, "nodeId", map[string]interface{}{"unique": true})
     }
 
     s.db <- db

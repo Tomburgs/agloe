@@ -1,25 +1,27 @@
 package main
 
 import (
-    "io"
-    "log"
-    "fmt"
-    "time"
-    "syscall/js"
-    "agloe/idb"
-    "agloe/parser"
-    "github.com/qedus/osmpbf"
+	"agloe/idb"
+	"agloe/parser"
+	"fmt"
+	"io"
+	"log"
+	"syscall/js"
+	"time"
+
+	"github.com/qedus/osmpbf"
 )
 
 const DEFAULT_FILENAME = "oldtown.osm.pbf"
 
 var p *parser.Parser
+var db *idb.IDB
 
 func main() {
-    db := idb.NewDB();
+    db = idb.NewDB();
     db.Test();
 
-    index()
+    index(db)
 
     js.Global().Set("search", js.FuncOf(search))
 
@@ -39,12 +41,59 @@ func search(this js.Value, args []js.Value) interface{} {
     return readableStream.New(readableStreamConstructor)
 }
 
+type RelStruct struct{
+    id int64
+    nodes []int64
+}
+
+func createPromiseRequest(request func (resolve js.Value, args interface{}), passed interface{}) js.Value {
+    handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
+        resolve := args[0]
+        request(resolve, passed)
+        return nil
+    })
+
+    promise := js.Global().Get("Promise")
+
+    return promise.New(handler)
+}
+
 func stream(this js.Value, args []js.Value) interface{} {
     controller := args[0]
+    start := time.Now()
+
+    js.Global().Set("controller", controller)
+
+    lookupWayNodes := func (resolve js.Value, arg interface{}) {
+        node := arg.(*osmpbf.Way)
+        handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
+            resolved := []LatLon{}
+            entries := args[0]
+
+            entries.Call("forEach", js.FuncOf(func (this js.Value, args []js.Value) interface{} {
+                entry := args[0]
+
+                resolved = append(resolved, LatLon{entry.Get("lat").Float(), entry.Get("lon").Float()})
+
+                return nil
+            }))
+
+            way := createWay(node, resolved)
+
+            resolve.Invoke(way)
+
+            elapsed := time.Since(start)
+            fmt.Printf("Executed for %d in %s\n", node.ID, elapsed)
+
+            return nil
+        })
+
+        transaction := db.NewTransaction("readonly")
+        transaction.GetMany(node.NodeIDs, handler)
+        defer transaction.Commit()
+    }
 
     go func() {
-        start := time.Now()
-
         p.FetchFile(DEFAULT_FILENAME)
         p.StartDecoder()
 
@@ -64,8 +113,8 @@ func stream(this js.Value, args []js.Value) interface{} {
                     node := createNode(entity)
                     controller.Call("enqueue", node)
                 case *osmpbf.Way:
-                    way := createWay(entity)
-                    controller.Call("enqueue", way)
+                    promise := createPromiseRequest(lookupWayNodes, entity)
+                    controller.Call("enqueue", promise)
                 case *osmpbf.Relation:
                     // TODO: Create relations entity
                 }

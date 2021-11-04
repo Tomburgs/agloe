@@ -1,19 +1,22 @@
 package main
 
 import (
-    "io"
-    "log"
-    "agloe/parser"
-    "agloe/bitmask"
-    "github.com/qedus/osmpbf"
+	"agloe/batch"
+	"agloe/bitmask"
+	"agloe/idb"
+	"agloe/parser"
+	"io"
+	"log"
+	"github.com/qedus/osmpbf"
 )
 
-func index() {
+func index(idb *idb.IDB) {
     bitmask := bitmask.NewBitmask()
+
     findWayRelatedNodes(&bitmask)
 
     if (len(bitmask) > 0) {
-        indexNodes(&bitmask)
+        indexNodes(&bitmask, idb)
     }
 }
 
@@ -49,8 +52,18 @@ func findWayRelatedNodes(mask *bitmask.Bitmask) {
 /*
  * Adds registered nodes in Bitmask to IndexedDB
  */
-func indexNodes(mask *bitmask.Bitmask) {
-    p = parser.NewParser()
+func indexNodes(mask *bitmask.Bitmask, db *idb.IDB) {
+    writer := batch.WriterFunc(func (batch []interface{}) {
+        transaction := db.NewTransaction("readwrite")
+
+        for _, entry := range batch {
+            transaction.SetIndex(entry)
+        }
+
+        transaction.Commit()
+    })
+    p := parser.NewParser()
+    b := batch.NewBatcher(writer, 256, 0)
 
     p.FetchFile(DEFAULT_FILENAME)
     /*
@@ -60,6 +73,7 @@ func indexNodes(mask *bitmask.Bitmask) {
     d := p.StartDecoder()
 
     defer p.Close()
+    defer b.Commit()
 
     for {
         entity, err := d.Decode()
@@ -72,7 +86,11 @@ func indexNodes(mask *bitmask.Bitmask) {
             switch entity := entity.(type) {
             case *osmpbf.Node:
                 if (mask.Has(entity.ID)) {
-                    // TODO: Add to IndexedDB
+                    b.Write(map[string]interface{}{
+                        "nodeId": entity.ID,
+                        "lat": entity.Lat,
+                        "lon": entity.Lon,
+                    })
                 }
             }
         }
