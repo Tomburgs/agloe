@@ -21,8 +21,6 @@ declare type Node = BaseEntity & {
  */
 declare type Way = BaseEntity & {
     type: 'way';
-    centeroid: Record<string, string>;
-    bounds: Record<string, string>;
     nodes: Array<Record<string, string>>;
 };
 
@@ -35,4 +33,4 @@ declare type Entity = Node | Way;
 /*
  * Golang function to execute text search on OSMPBF
  */
-declare function search(term: string): ReadableStream<Entity>;
+declare function search(term: string): ReadableStream<Entity | Promise<Entity>>;

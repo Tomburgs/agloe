@@ -49,7 +49,7 @@ type RelStruct struct{
 func createPromiseRequest(request func (resolve js.Value, args interface{}), passed interface{}) js.Value {
     handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
         resolve := args[0]
-        request(resolve, passed)
+        go request(resolve, passed)
         return nil
     })
 
@@ -61,8 +61,6 @@ func createPromiseRequest(request func (resolve js.Value, args interface{}), pas
 func stream(this js.Value, args []js.Value) interface{} {
     controller := args[0]
     start := time.Now()
-
-    js.Global().Set("controller", controller)
 
     lookupWayNodes := func (resolve js.Value, arg interface{}) {
         node := arg.(*osmpbf.Way)
