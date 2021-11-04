@@ -1,7 +1,6 @@
 package idb
 
 import (
-    "fmt"
     "syscall/js"
 )
 
@@ -29,8 +28,4 @@ func NewDB() *IDB {
     idbOpenReq.Set("onupgradeneeded", js.FuncOf(setup.handleUpgrade))
 
     return &IDB{ <-setup.db }
-}
-
-func (idb *IDB) Test() {
-    fmt.Println(idb.db)
 }

@@ -19,7 +19,6 @@ var db *idb.IDB
 
 func main() {
     db = idb.NewDB();
-    db.Test();
 
     index(db)
 

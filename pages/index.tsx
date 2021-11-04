@@ -12,29 +12,34 @@ const instantiate = async (request: Promise<Response>, importObject: WebAssembly
     return WebAssembly.instantiate(source, importObject);
 };
 
-const initializeWasm = async (setIsInitialized: (isInitialized: boolean) => void) => {
-    const go = new Go();
-
-    const wasm = fetch('/main.wasm');
-    const { instance } = await instantiate(wasm, go.importObject);
-
-    go.run(instance);
-    setIsInitialized(true);
-};
-
-export default function Home(): JSX.Element {
+const useWasm = () => {
     const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
-        initializeWasm(setIsInitialized);
+        const go = new Go();
+
+        const wasm = fetch('/main.wasm');
+
+        instantiate(wasm, go.importObject)
+            .then(({ instance }) => {
+                go.run(instance);
+                setIsInitialized(true);
+            });
     }, []);
 
-    console.log(isInitialized);
+    return isInitialized;
+};
+
+export default function Home(): JSX.Element {
+    const isWasmInstanceRunning = useWasm();
 
     return (
         <main className={ styles.main }>
             <div className={ styles.wrapper }>
-                <input className={ styles.input } />
+                {!isWasmInstanceRunning && (
+                    <p>Loading WebAssembly instance</p>
+                )}
+                <input className={ styles.input } disabled={!isWasmInstanceRunning} />
             </div>
         </main>
     );
