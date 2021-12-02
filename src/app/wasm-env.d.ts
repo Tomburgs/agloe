@@ -9,7 +9,7 @@ declare type BaseEntity = {
  * Node is base entity.
  * Nodes are either as-is or they can be part of Way or Relation structure.
  */
-declare type Node = BaseEntity & {
+declare type NodeEntity = BaseEntity & {
     type: 'node';
     lat: number;
     lon: number;
@@ -19,7 +19,7 @@ declare type Node = BaseEntity & {
  * Way entity consists of multiple nodes.
  * Way can be both open & closed.
  */
-declare type Way = BaseEntity & {
+declare type WayEntity = BaseEntity & {
     type: 'way';
     nodes: Array<Record<string, string>>;
 };
@@ -28,7 +28,7 @@ declare type Way = BaseEntity & {
  * Entity is either Node, Way or Relation.
  * They can be categorized by their `type` property.
  */
-declare type Entity = Node | Way;
+declare type Entity = NodeEntity | WayEntity;
 
 /*
  * Golang function to execute text search on OSMPBF
