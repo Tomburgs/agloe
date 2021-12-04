@@ -1,5 +1,4 @@
 import { css } from 'otion';
-import Head from 'next/head';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import { useDebounce } from 'react-use';
@@ -118,9 +117,6 @@ export default function Home(): JSX.Element {
 
     return (
       <main className={styles.main}>
-        <Head>
-          <script src="/wasm_exec.js" />
-        </Head>
         <div className={root}>
           {view === View.Search && (
             <SearchView
