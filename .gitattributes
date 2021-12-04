@@ -1,3 +1,6 @@
 src/app/public/wasm_exec.js linguist-vendored
 .vim linguist-vendored
-src/app/* linguist-detectable=false
+*.js linguist-vendored
+*.ts linguist-vendored
+*.tsx linguist-vendored
+*.scss linguist-vendored
