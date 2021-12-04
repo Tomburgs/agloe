@@ -14,6 +14,7 @@ const input = css({
     width: '100%',
     border: 'none',
     color: '#2E3A59',
+    outline: 'none',
     selectors: {
       '&::placeholder': {
         color: typography.color.tertiary,
