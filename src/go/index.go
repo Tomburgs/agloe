@@ -1,10 +1,10 @@
 package main
 
 import (
-	"agloe/batch"
-	"agloe/bitmask"
-	"agloe/idb"
-	"agloe/parser"
+	"github.com/Tomburgs/agloe/batch"
+	"github.com/Tomburgs/agloe/bitmask"
+	"github.com/Tomburgs/agloe/idb"
+	"github.com/Tomburgs/agloe/parser"
 	"io"
 	"log"
 	"github.com/qedus/osmpbf"

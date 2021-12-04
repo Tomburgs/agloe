@@ -7,9 +7,9 @@ import {
   Marker,
 } from 'maplibre-gl';
 import { css } from 'otion';
-import {useCallback} from 'react';
-import {colors} from 'styles/colors';
-import {typography} from 'styles/typography';
+import { useCallback } from 'react';
+import { colors } from 'styles/colors';
+import { typography } from 'styles/typography';
 
 const head = css({
   display: 'flex',

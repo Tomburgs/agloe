@@ -1,11 +1,12 @@
 import { css } from 'otion';
+import Head from 'next/head';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import { useDebounce } from 'react-use';
-import {SearchView} from 'view/search';
-import {MapView} from 'view/map';
+import { SearchView } from 'view/search';
+import { MapView } from 'view/map';
 import { Icon } from 'components/icon';
-import {typography} from 'styles/typography';
+import { typography } from 'styles/typography';
 
 const root = css({
   width: '100%',
@@ -54,7 +55,6 @@ const useWasm = () => {
 
     useEffect(() => {
         const go = new Go();
-
         const wasm = fetch('/main.wasm');
 
         instantiate(wasm, go.importObject)
@@ -118,6 +118,9 @@ export default function Home(): JSX.Element {
 
     return (
       <main className={styles.main}>
+        <Head>
+          <script src="/wasm_exec.js" />
+        </Head>
         <div className={root}>
           {view === View.Search && (
             <SearchView

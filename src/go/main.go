@@ -1,11 +1,12 @@
 package main
 
 import (
-	"agloe/idb"
-	"agloe/parser"
+	"github.com/Tomburgs/agloe/idb"
+	"github.com/Tomburgs/agloe/parser"
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"syscall/js"
 	"time"
 
@@ -30,7 +31,7 @@ func main() {
 func search(this js.Value, args []js.Value) interface{} {
     search := args[0].String()
     p = parser.NewParser()
-    p.SetSearch(search)
+    p.SetSearch(strings.ToLower(search))
 
     readableStream := js.Global().Get("ReadableStream")
     readableStreamConstructor := map[string]interface{}{

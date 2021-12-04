@@ -1,5 +1,5 @@
 import { Icon } from 'components/icon';
-import {Result} from 'components/result';
+import { Result } from 'components/result';
 import { css } from 'otion';
 import { ChangeEventHandler } from 'react';
 import { typography } from 'styles/typography';
@@ -108,7 +108,7 @@ export function SearchView({ search, onSearch, onSelect, disabled, results }: Se
             </p>
           )}
           {results.map((entity) => (
-            <li className={result} onClick={() => onSelect(entity)}>
+            <li key={entity.id} className={result} onClick={() => onSelect(entity)}>
               <Result key={entity.id} entity={entity} />
             </li>
           ))}

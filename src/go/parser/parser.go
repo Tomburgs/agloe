@@ -24,7 +24,7 @@ func (p *Parser) IsValidEntity(Tags map[string]string) bool {
     search := p.search
     name, ok := Tags["name"]
 
-    return ok && strings.Contains(name, search)
+    return ok && strings.Contains(strings.ToLower(name), search)
 }
 
 func (p *Parser) SetSearch(search string) {

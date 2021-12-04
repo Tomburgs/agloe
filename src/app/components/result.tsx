@@ -106,4 +106,3 @@ export function Result({ entity }: ResultProps): JSX.Element {
     </div>
   );
 }
-

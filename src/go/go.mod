@@ -1,4 +1,4 @@
-module agloe
+module github.com/Tomburgs/agloe
 
 go 1.15
 
