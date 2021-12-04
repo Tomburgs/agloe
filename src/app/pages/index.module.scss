@@ -1,8 +1,11 @@
 @use 'styles/variables';
 
 .main {
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 80px;
 }
 
 .wrapper {

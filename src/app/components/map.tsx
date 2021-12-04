@@ -1,25 +1,41 @@
 import { css } from 'otion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Map as MapLibre } from 'maplibre-gl';
+import { skeleton } from '../styles/skeleton';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
-type LatLon = [number, number];
-
-export interface MapboxProps {
-  coordinates: LatLon;
+interface MapProps {
+  onLoaded?: (map: MapLibre) => void;
 }
 
-const map = css({
-  height: '600px',
+const container = css({
+  position: 'relative',
 });
 
-export function Map(): JSX.Element {
+const map = css({
+  height: '550px',
+  width: '500px',
+  borderRadius: '0 0 10px 10px',
+});
+
+const placeholder = skeleton + css({
+  height: '550px',
+});
+
+export function Map({ onLoaded }: MapProps): JSX.Element {
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const mapInstanceRef = useRef<MapLibre | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    mapInstanceRef.current = new MapLibre({
+    if (mapContainerRef.current === null) {
+      return;
+    }
+
+    const map = new MapLibre({
       container: mapContainerRef.current,
       style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAP_TOKEN}`,
+      zoom: 1,
       maxBounds: [
         /*
          * These bounds are taken directly from OSM PBF headers & hardcoded.
@@ -28,10 +44,25 @@ export function Map(): JSX.Element {
         [24.097802639008, 56.943557974387],
         [24.117500782013, 56.953938339056],
       ]
-    })
+    });
+
+    mapInstanceRef.current = map;
+    map.on('load', () => {
+      setIsLoaded(true);
+      onLoaded?.(map);
+    });
   }, []);
 
-  console.log(mapInstanceRef);
-
-  return <div ref={mapContainerRef} className={map} />
+  return (
+    <div className={container}>
+      {!isLoaded && (
+        <div className={placeholder} />
+      )}
+      <div
+        ref={mapContainerRef}
+        className={map}
+        style={isLoaded ? {} : { visibility: 'hidden', position: 'absolute' }}
+      />
+    </div>
+  );
 }

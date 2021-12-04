@@ -21,7 +21,7 @@ declare type NodeEntity = BaseEntity & {
  */
 declare type WayEntity = BaseEntity & {
     type: 'way';
-    nodes: Array<Record<string, string>>;
+    nodes: Array<{ lon: number, lat: number }>;
 };
 
 /*
