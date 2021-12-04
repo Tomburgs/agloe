@@ -1,1 +1,3 @@
 src/app/public/wasm_exec.js linguist-vendored
+.vim linguist-vendored
+src/app/* linguist-detectable=false
