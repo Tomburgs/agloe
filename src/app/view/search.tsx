@@ -40,7 +40,7 @@ const result = css({
 const list = css({
   height: '550px',
   listStyle: 'none',
-  overflow: 'scroll',
+  overflow: 'hidden scroll',
   boxSizing: 'border-box',
   margin: '0',
   padding: 0,
