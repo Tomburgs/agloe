@@ -1,11 +1,12 @@
 import { css } from 'otion';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
-import styles from './index.module.scss';
 import { useDebounce } from 'react-use';
 import { SearchView } from 'view/search';
 import { MapView } from 'view/map';
 import { Icon } from 'components/icon';
 import { typography } from 'styles/typography';
+import mixpanel from 'mixpanel-browser';
+import styles from './index.module.scss';
 
 const root = css({
   width: '100%',
@@ -39,129 +40,144 @@ enum View {
 }
 
 const instantiate = async (request: Promise<Response>, importObject: WebAssembly.Imports) => {
-    if (WebAssembly.instantiateStreaming) {
-        return WebAssembly.instantiateStreaming(request, importObject);
-    }
+  if (WebAssembly.instantiateStreaming) {
+    return WebAssembly.instantiateStreaming(request, importObject);
+  }
 
-    const response = await request;
-    const source = await response.arrayBuffer();
+  const response = await request;
+  const source = await response.arrayBuffer();
 
-    return WebAssembly.instantiate(source, importObject);
+  return WebAssembly.instantiate(source, importObject);
 };
 
 const useWasm = () => {
-    const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-    useEffect(() => {
-        const go = new Go();
-        const wasm = fetch('/main.wasm');
+  useEffect(() => {
+    const go = new Go();
+    const wasm = fetch('/main.wasm');
 
-        instantiate(wasm, go.importObject)
-            .then(({ instance }) => {
-                go.run(instance);
-                setIsInitialized(true);
-            });
-    }, []);
+    instantiate(wasm, go.importObject)
+    .then(({ instance }) => {
+      go.run(instance);
+      setIsInitialized(true);
+    });
+  }, []);
 
-    return isInitialized;
+  return isInitialized;
 };
 
 export default function Home(): JSX.Element {
-    const isWasmInstanceRunning = useWasm();
-    const streamInstanceRef = useRef<ReadableStream | null>(null);
-    const [view, setView] = useState<View>(View.Search);
-    const [selected, setSelected] = useState<Entity | null>(null);
-    const [search, setSearch] = useState<string>('');
-    const [results, setResults] = useState<Entity[][]>([]);
+  const isWasmInstanceRunning = useWasm();
+  const streamInstanceRef = useRef<ReadableStream | null>(null);
+  const [view, setView] = useState<View>(View.Search);
+  const [selected, setSelected] = useState<Entity | null>(null);
+  const [search, setSearch] = useState<string>('');
+  const [results, setResults] = useState<Entity[][]>([]);
 
-    useDebounce(() => {
-        if (search.length > 1) {
-            streamInstanceRef.current = global.search(search);
+  useDebounce(() => {
+    if (search.length > 1) {
+      streamInstanceRef.current = global.search(search);
 
-            const reader = streamInstanceRef.current.getReader();
-            const state = { matches: 0, maxDist: 0, minDist: 0 };
-            const pushResult = (result: Entity) => {
-              const { rank } = result.metadata;
+      const reader = streamInstanceRef.current.getReader();
+      const state = { matches: 0, maxDist: 0, minDist: 0 };
+      const pushResult = (result: Entity) => {
+        const { rank } = result.metadata;
 
-              if (state.matches > 10 && rank > search.length * 3) {
-                return;
-              }
-
-              state.matches++;
-
-              if (state.maxDist < rank) {
-                state.maxDist = rank;
-              }
-
-              if (state.minDist < rank) {
-                state.minDist = rank;
-              }
-
-              setResults(results => {
-                const clonedResults = [...results];
-                const existingRankResults = results[rank] || [];
-                const rankResults = [...existingRankResults, result];
-
-                clonedResults[rank] = rankResults;
-
-                return clonedResults;
-              });
-            };
-            const processEntities = ({ done, value }: ReadableStreamDefaultReadResult<Entity>): void => {
-                if (done) {
-                    return;
-                }
-
-                if (value instanceof Promise) {
-                    value.then(pushResult);
-                } else if (value) {
-                    pushResult(value);
-                }
-
-                reader.read().then(processEntities);
-            };
-
-            reader.read().then(processEntities);
+        if (state.matches > 10 && rank > search.length * 3) {
+          return;
         }
-    }, 200, [search]);
 
-    const onSearch = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-        const { target: { value } } = event;
+        state.matches++;
 
-        setSearch(value);
-        setResults([]);
-    }, [setSearch, setResults]);
+        if (state.maxDist < rank) {
+          state.maxDist = rank;
+        }
 
-    const onSelect = useCallback((entity: Entity) => {
-        setSelected(entity);
-        setView(View.Map);
-    }, []);
+        if (state.minDist < rank) {
+          state.minDist = rank;
+        }
 
-    const onBack = useCallback(() => {
-        setSelected(null);
-        setView(View.Search);
-    }, []);
+        setResults(results => {
+          const clonedResults = [...results];
+          const existingRankResults = results[rank] || [];
+          const rankResults = [...existingRankResults, result];
 
-    return (
-      <main className={styles.main}>
-        <div className={root}>
-          {view === View.Search && (
-            <SearchView
-              search={search}
-              onSearch={onSearch}
-              onSelect={onSelect}
-              disabled={!isWasmInstanceRunning}
-              results={results}
-            />
-          )}
-          {view === View.Map && (
-            <MapView entity={selected!} onBack={onBack} />
-          )}
-        </div>
-        <h6 className={credit}>
-            Made with <Icon name="heart" /> in Copenhagen.<br />
-            By <a href="https://github.com/Tomburgs" rel="noreferrer">@Tomburgs</a>.
-        </h6>
-      </main>
-    );
+          clonedResults[rank] = rankResults;
+
+          return clonedResults;
+        });
+      };
+      const processEntities = ({ done, value }: ReadableStreamDefaultReadResult<Entity>): void => {
+        if (done) {
+          return;
+        }
+
+        if (value instanceof Promise) {
+          value.then(pushResult);
+        } else if (value) {
+          pushResult(value);
+        }
+
+        reader.read().then(processEntities);
+      };
+
+      reader.read().then(processEntities);
+    }
+  }, 200, [search]);
+
+  useDebounce(() => {
+    if (search.length > 1) {
+      mixpanel.track('Search', {
+        'Search Term': search,
+      });
+    }
+  }, 1000, [search]);
+
+  const onSearch = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const { target: { value } } = event;
+
+    setSearch(value);
+    setResults([]);
+  }, [setSearch, setResults]);
+
+  const onSelect = useCallback((entity: Entity) => {
+    setSelected(entity);
+    setView(View.Map);
+
+    mixpanel.track('Search Result Click', {
+      id: entity.id,
+      type: entity.type,
+      name: entity.name,
+      rank: entity.metadata.rank,
+    });
+  }, []);
+
+  const onBack = useCallback(() => {
+    setSelected(null);
+    setView(View.Search);
+  }, []);
+
+  return (
+    <main className={styles.main}>
+      <div className={root}>
+        {view === View.Search && (
+          <SearchView
+            search={search}
+            onSearch={onSearch}
+            onSelect={onSelect}
+            disabled={!isWasmInstanceRunning}
+            results={results}
+          />
+        )}
+        {view === View.Map && (
+          <MapView entity={selected!} onBack={onBack} />
+        )}
+      </div>
+      <h6 className={credit}>
+          Made with <Icon name="heart" /> in Copenhagen.<br />
+          By <a href="https://github.com/Tomburgs" rel="noreferrer">@Tomburgs</a>.
+      </h6>
+    </main>
+  );
 }

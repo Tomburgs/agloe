@@ -1,35 +1,36 @@
 @use 'styles/variables';
 
 .main {
-    display: flex;
-    flex-flow: column;
-    justify-content: center;
-    align-items: center;
-    gap: 80px;
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  gap: 80px;
 }
 
 .wrapper {
-    display: flex;
-    flex-flow: column;
-    justify-content: center;
-    max-width: 600px;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0 auto;
-    padding: 2rem;
-    background-color: variables.$less-white;
-    border-radius: variables.$border-radius;
-    box-shadow: variables.$box-shadow;
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: variables.$less-white;
+  border-radius: variables.$border-radius;
+  box-shadow: variables.$box-shadow;
 }
 
 .input {
-    font-size: 20px;
-    border-radius: variables.$border-radius-small;
-    border: variables.$border;
-    padding: 6px 12px;
-    font-weight: 400;
+  font-size: 20px;
+  border-radius: variables.$border-radius-small;
+  border: variables.$border;
+  padding: 6px 12px;
+  font-weight: 400;
 
-    &:focus {
-        outline: none;
-    }
+  &:focus {
+    outline: none;
+  }
 }
