@@ -70,6 +70,7 @@ const useWasm = () => {
 export default function Home(): JSX.Element {
   const isWasmInstanceRunning = useWasm();
   const streamInstanceRef = useRef<ReadableStream | null>(null);
+  const searchValueRef = useRef<string>('');
   const [view, setView] = useState<View>(View.Search);
   const [selected, setSelected] = useState<Entity | null>(null);
   const [search, setSearch] = useState<string>('');
@@ -77,13 +78,31 @@ export default function Home(): JSX.Element {
 
   useDebounce(() => {
     if (search.length > 1) {
+      setResults([]);
+      searchValueRef.current = search;
+
+      if (streamInstanceRef.current?.locked === false) {
+        streamInstanceRef.current.cancel();
+      }
+
       streamInstanceRef.current = global.search(search);
 
       const reader = streamInstanceRef.current.getReader();
       const state = { matches: 0, maxDist: 0, minDist: 0 };
       const pushResult = (result: Entity) => {
-        const { rank } = result.metadata;
+        const { rank, search: resultSearchTerm } = result.metadata;
 
+        /*
+         * Did no one tell you that the search term changed, because you are a promise that was too busy resolving?
+         * Well, now we tell you.
+         */
+        if (searchValueRef.current !== resultSearchTerm) {
+          return;
+        }
+
+        /*
+         * We don't want ALL the results, just the most accurate ones.
+         */
         if (state.matches > 10 && rank > search.length * 3) {
           return;
         }

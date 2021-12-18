@@ -5,6 +5,7 @@ declare type BaseEntity = {
   tags: Record<string, any>;
   metadata: {
     rank: number;
+    search: string;
   };
 };
 

@@ -8,6 +8,7 @@ import (
 
 type Metadata struct {
     Rank int `json:"rank"`
+    Search string `json:"search"`
 }
 
 type Entity struct {
@@ -33,13 +34,13 @@ type Way struct {
     Nodes []LatLon `json:"nodes,omitempty"`
 }
 
-func createNode(node *osmpbf.Node, rank int) js.Value {
+func createNode(node *osmpbf.Node, rank int, search string) js.Value {
     entity := Entity{
         node.ID,
         "node",
         node.Tags["name"],
         node.Tags,
-        Metadata{rank},
+        Metadata{rank, search},
     }
     latlon := LatLon{node.Lat, node.Lon}
     marshal := Node{&entity, &latlon}
@@ -49,13 +50,13 @@ func createNode(node *osmpbf.Node, rank int) js.Value {
     return createJSObject(string(json))
 }
 
-func createWay(node *osmpbf.Way, nodes []LatLon, rank int) js.Value {
+func createWay(node *osmpbf.Way, nodes []LatLon, rank int, search string) js.Value {
     entity := Entity{
         node.ID,
         "way",
         node.Tags["name"],
         node.Tags,
-        Metadata{rank},
+        Metadata{rank, search},
     }
     way := Way{&entity, nodes}
 
