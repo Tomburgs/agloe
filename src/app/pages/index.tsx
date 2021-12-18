@@ -165,10 +165,10 @@ export default function Home(): JSX.Element {
     setView(View.Map);
 
     mixpanel.track('Search Result Click', {
-      id: entity.id,
-      type: entity.type,
-      name: entity.name,
-      rank: entity.metadata.rank,
+      'Result ID': entity.id,
+      'Result Entity Type': entity.type,
+      'Result Name': entity.name,
+      'Result Rank': entity.metadata.rank,
     });
   }, []);
 
