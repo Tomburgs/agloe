@@ -34,6 +34,7 @@ const subheading = css({
 const text = css({
   fontSize: typography.size[3],
   color: typography.color.primary,
+  padding: '0 18px',
 });
 
 const buttonGroup = css({
