@@ -76,7 +76,7 @@ interface SearchViewProps {
   onSearch: ChangeEventHandler<HTMLInputElement>;
   onSelect: (entity: Entity) => void;
   disabled: boolean;
-  results: Entity[];
+  results: Entity[][];
 }
 
 export function SearchView({ search, onSearch, onSelect, disabled, results }: SearchViewProps): JSX.Element {
@@ -108,7 +108,7 @@ export function SearchView({ search, onSearch, onSelect, disabled, results }: Se
               Looks like we couldn't find what you were looking for 🥴
             </p>
           )}
-          {results.map((entity) => (
+          {results.flat().map((entity) => entity && (
             <li key={entity.id} className={result} onClick={() => onSelect(entity)}>
               <Result key={entity.id} entity={entity} />
             </li>

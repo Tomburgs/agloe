@@ -32,7 +32,7 @@ func findWayRelatedNodes(mask *bitmask.Bitmask) {
     defer p.Close()
 
     for {
-        entity, err := p.Parse()
+        entity, _, err := p.Parse()
 
         if err == io.EOF {
             break

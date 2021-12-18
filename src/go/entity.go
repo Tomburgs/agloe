@@ -1,16 +1,21 @@
 package main
 
 import (
-    "syscall/js"
-    "encoding/json"
-    "github.com/qedus/osmpbf"
+	"encoding/json"
+	"syscall/js"
+	"github.com/qedus/osmpbf"
 )
+
+type Metadata struct {
+    Rank int `json:"rank"`
+}
 
 type Entity struct {
     ID int64 `json:"id"`
     Type string `json:"type"`
     Name string `json:"name"`
     Tags map[string]string `json:"tags"`
+    Metadata Metadata `json:"metadata"`
 }
 
 type LatLon struct {
@@ -28,8 +33,14 @@ type Way struct {
     Nodes []LatLon `json:"nodes,omitempty"`
 }
 
-func createNode(node *osmpbf.Node) js.Value {
-    entity := Entity{node.ID, "node", node.Tags["name"], node.Tags}
+func createNode(node *osmpbf.Node, rank int) js.Value {
+    entity := Entity{
+        node.ID,
+        "node",
+        node.Tags["name"],
+        node.Tags,
+        Metadata{rank},
+    }
     latlon := LatLon{node.Lat, node.Lon}
     marshal := Node{&entity, &latlon}
 
@@ -38,8 +49,14 @@ func createNode(node *osmpbf.Node) js.Value {
     return createJSObject(string(json))
 }
 
-func createWay(node *osmpbf.Way, nodes []LatLon) js.Value {
-    entity := Entity{node.ID, "way", node.Tags["name"], node.Tags}
+func createWay(node *osmpbf.Way, nodes []LatLon, rank int) js.Value {
+    entity := Entity{
+        node.ID,
+        "way",
+        node.Tags["name"],
+        node.Tags,
+        Metadata{rank},
+    }
     way := Way{&entity, nodes}
 
     json, _ := json.Marshal(way)

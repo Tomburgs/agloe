@@ -1,8 +1,11 @@
 declare type BaseEntity = {
-    id: number;
-    type: string;
-    name: string;
-    tags: Record<string, any>;
+  id: number;
+  type: string;
+  name: string;
+  tags: Record<string, any>;
+  metadata: {
+    rank: number;
+  };
 };
 
 /*
@@ -10,9 +13,9 @@ declare type BaseEntity = {
  * Nodes are either as-is or they can be part of Way or Relation structure.
  */
 declare type NodeEntity = BaseEntity & {
-    type: 'node';
-    lat: number;
-    lon: number;
+  type: 'node';
+  lat: number;
+  lon: number;
 };
 
 /*
@@ -20,8 +23,8 @@ declare type NodeEntity = BaseEntity & {
  * Way can be both open & closed.
  */
 declare type WayEntity = BaseEntity & {
-    type: 'way';
-    nodes: Array<{ lon: number, lat: number }>;
+  type: 'way';
+  nodes: Array<{ lon: number, lat: number }>;
 };
 
 /*

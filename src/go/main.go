@@ -46,10 +46,10 @@ type RelStruct struct{
     nodes []int64
 }
 
-func createPromiseRequest(request func (resolve js.Value, args interface{}), passed interface{}) js.Value {
+func createPromiseRequest(request func (resolve js.Value, args ...interface{}), passed ...interface{}) js.Value {
     handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
         resolve := args[0]
-        go request(resolve, passed)
+        go request(resolve, passed...)
         return nil
     })
 
@@ -62,8 +62,10 @@ func stream(this js.Value, args []js.Value) interface{} {
     controller := args[0]
     start := time.Now()
 
-    lookupWayNodes := func (resolve js.Value, arg interface{}) {
-        node := arg.(*osmpbf.Way)
+    lookupWayNodes := func (resolve js.Value, arg ...interface{}) {
+        node := arg[0].(*osmpbf.Way)
+        rank := arg[1].(int)
+
         handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
             resolved := []LatLon{}
             entries := args[0]
@@ -76,7 +78,7 @@ func stream(this js.Value, args []js.Value) interface{} {
                 return nil
             }))
 
-            way := createWay(node, resolved)
+            way := createWay(node, resolved, rank)
 
             resolve.Invoke(way)
 
@@ -98,7 +100,7 @@ func stream(this js.Value, args []js.Value) interface{} {
         defer p.Close()
 
         for {
-            entity, err := p.Parse()
+            entity, rank, err := p.Parse()
 
             if err == io.EOF {
                 controller.Call("close")
@@ -108,10 +110,10 @@ func stream(this js.Value, args []js.Value) interface{} {
             } else {
                 switch entity := entity.(type) {
                 case *osmpbf.Node:
-                    node := createNode(entity)
+                    node := createNode(entity, rank)
                     controller.Call("enqueue", node)
                 case *osmpbf.Way:
-                    promise := createPromiseRequest(lookupWayNodes, entity)
+                    promise := createPromiseRequest(lookupWayNodes, entity, rank)
                     controller.Call("enqueue", promise)
                 case *osmpbf.Relation:
                     // TODO: Create relations entity

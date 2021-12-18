@@ -72,14 +72,41 @@ export default function Home(): JSX.Element {
     const [view, setView] = useState<View>(View.Search);
     const [selected, setSelected] = useState<Entity | null>(null);
     const [search, setSearch] = useState<string>('');
-    const [results, setResults] = useState<Entity[]>([]);
+    const [results, setResults] = useState<Entity[][]>([]);
 
     useDebounce(() => {
         if (search.length > 1) {
             streamInstanceRef.current = global.search(search);
 
             const reader = streamInstanceRef.current.getReader();
-            const pushResult = (result: Entity) => setResults(results => [...results, result]);
+            const state = { matches: 0, maxDist: 0, minDist: 0 };
+            const pushResult = (result: Entity) => {
+              const { rank } = result.metadata;
+
+              if (state.matches > 10 && rank > search.length * 3) {
+                return;
+              }
+
+              state.matches++;
+
+              if (state.maxDist < rank) {
+                state.maxDist = rank;
+              }
+
+              if (state.minDist < rank) {
+                state.minDist = rank;
+              }
+
+              setResults(results => {
+                const clonedResults = [...results];
+                const existingRankResults = results[rank] || [];
+                const rankResults = [...existingRankResults, result];
+
+                clonedResults[rank] = rankResults;
+
+                return clonedResults;
+              });
+            };
             const processEntities = ({ done, value }: ReadableStreamDefaultReadResult<Entity>): void => {
                 if (done) {
                     return;
