@@ -1,13 +1,15 @@
 package parser
 
 import (
-    "io"
-    "log"
-    "errors"
-    "runtime"
-    "strings"
-    "net/http"
-    "github.com/qedus/osmpbf"
+	"errors"
+	"io"
+	"log"
+	"net/http"
+	"runtime"
+	"strings"
+
+	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/qedus/osmpbf"
 )
 
 type Parser struct {
@@ -20,11 +22,25 @@ func NewParser() *Parser {
     return &Parser{ search: "" }
 }
 
-func (p *Parser) IsValidEntity(Tags map[string]string) bool {
+func (p *Parser) GetRank(Tags map[string]string) int {
     search := p.search
     name, ok := Tags["name"]
 
-    return ok && strings.Contains(strings.ToLower(name), search)
+    if !ok {
+        return -1;
+    }
+
+    /*
+     * If we get a 1:1 match anywhere in the string then it's automatically 0.
+     */
+    if strings.Contains(strings.ToLower(name), search) {
+        return 0;
+    }
+
+    /*
+     * If all else fails, find Levenshtein distance.
+     */
+    return fuzzy.RankMatchFold(search, name);
 }
 
 func (p *Parser) SetSearch(search string) {
@@ -66,31 +82,37 @@ func (p *Parser) StartDecoder() *osmpbf.Decoder {
     return decoder
 }
 
-func (p *Parser) Parse() (interface{}, error) {
+func (p *Parser) Parse() (interface{}, int, error) {
     decoder := p.decoder
     entity, err := decoder.Decode()
 
     if err != nil {
-        return nil, err
+        return nil, -1, err
     }
 
     switch entity := entity.(type) {
         case *osmpbf.Node:
-            if (p.IsValidEntity(entity.Tags)) {
-                return entity, nil
+            rank := p.GetRank(entity.Tags);
+
+            if (rank > -1) {
+                return entity, rank, nil
             }
         case *osmpbf.Way:
-            if (p.IsValidEntity(entity.Tags)) {
-                return entity, nil
+            rank := p.GetRank(entity.Tags);
+
+            if (rank > -1) {
+                return entity, rank, nil
             }
         case *osmpbf.Relation:
-            if (p.IsValidEntity(entity.Tags)) {
-                return entity, nil
+            rank := p.GetRank(entity.Tags);
+
+            if (rank > -1) {
+                return entity, rank, nil
             }
         default:
             err := errors.New("unknown type")
-            return nil, err
+            return nil, -1, err
     }
 
-    return nil, nil
+    return nil, -1, nil
 }

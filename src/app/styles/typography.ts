@@ -2,6 +2,8 @@ const size = {
   1: '20px',
   2: '18px',
   3: '16px',
+  4: '14px',
+  5: '12px',
 };
 
 const weight = {
