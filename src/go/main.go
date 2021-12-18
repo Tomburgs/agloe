@@ -17,6 +17,7 @@ const DEFAULT_FILENAME = "oldtown.osm.pbf"
 
 var p *parser.Parser
 var db *idb.IDB
+var searchTerm string
 
 func main() {
     db = idb.NewDB();
@@ -30,6 +31,7 @@ func main() {
 
 func search(this js.Value, args []js.Value) interface{} {
     search := args[0].String()
+    searchTerm = search
     p = parser.NewParser()
     p.SetSearch(strings.ToLower(search))
 
@@ -61,6 +63,7 @@ func createPromiseRequest(request func (resolve js.Value, args ...interface{}), 
 func stream(this js.Value, args []js.Value) interface{} {
     controller := args[0]
     start := time.Now()
+    term := searchTerm
 
     lookupWayNodes := func (resolve js.Value, arg ...interface{}) {
         node := arg[0].(*osmpbf.Way)
@@ -78,7 +81,7 @@ func stream(this js.Value, args []js.Value) interface{} {
                 return nil
             }))
 
-            way := createWay(node, resolved, rank)
+            way := createWay(node, resolved, rank, term)
 
             resolve.Invoke(way)
 
@@ -110,7 +113,7 @@ func stream(this js.Value, args []js.Value) interface{} {
             } else {
                 switch entity := entity.(type) {
                 case *osmpbf.Node:
-                    node := createNode(entity, rank)
+                    node := createNode(entity, rank, term)
                     controller.Call("enqueue", node)
                 case *osmpbf.Way:
                     promise := createPromiseRequest(lookupWayNodes, entity, rank)
