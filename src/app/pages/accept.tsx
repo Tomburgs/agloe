@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { css } from 'otion';
 import { colors } from 'styles/colors';
-import { storage } from '../constants';
 import { typography } from 'styles/typography';
 import mixpanel from 'mixpanel-browser';
 
@@ -68,56 +66,29 @@ const buttonAccept = css({
 
 export default function Accept(): JSX.Element {
   const router = useRouter();
-  const [isRejected, setIsRejected] = useState<boolean>(() => (
-    typeof window !== 'undefined' && localStorage.getItem(storage.USAGE_TRACKING_ACCEPTED) === '0'
-  ));
 
-  const onRejectTracking = () => {
-    localStorage.setItem(storage.USAGE_TRACKING_ACCEPTED, '0');
-    setIsRejected(true);
-  };
-
-  const onAcceptTracking = () => {
-    localStorage.setItem(storage.USAGE_TRACKING_ACCEPTED, '1');
+  const onSetTrackingPreference = (isTrackingAccepted: boolean) => () => {
+    mixpanel[isTrackingAccepted ? 'opt_in_tracking' : 'opt_out_tracking']();
     router.push('/');
-    mixpanel.track('Tracking accepted');
-  };
+  }
 
   return (
     <main className={main}>
       <div className={root}>
-        {!isRejected ? (
-          <>
-            <h1 className={heading}>Hej! 👋</h1>
-            <h2 className={subheading}>Usage & Analytics</h2>
-            <p className={text}>
-              We wanted to let you know that we use MixPanel to collect information about how you interact with Agloe.<br /><br />
-              If you don't wish to share this information with us you can always use Agloe by cloning the GitHub repository and running it locally.
-            </p>
-            <div className={buttonGroup}>
-              <button className={buttonReject} onClick={onRejectTracking}>
-                Reject
-              </button>
-              <button className={buttonAccept} onClick={onAcceptTracking}>
-                Accept
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1>Tracking rejected 😵</h1>
-            <p className={text}>
-              You have opted-out of tracking. That's cool.<br/><br/>
-              If you change your mind, click the button below.<br/>
-              Otherwise feel free to clone the <a href="https://github.com/Tomburgs/agloe" rel="noreferrer" target="_blank">GitHub repository</a> and running the project locally by executing <code>`yarn && yarn dev`</code>.
-            </p>
-            <div className={buttonGroup}>
-              <button className={buttonAccept} onClick={onAcceptTracking}>
-                Accept tracking
-              </button>
-            </div>
-          </>
-        )}
+        <h1 className={heading}>Hej! 👋</h1>
+        <h2 className={subheading}>Usage & Analytics</h2>
+        <p className={text}>
+          We wanted to let you know that we use MixPanel to collect information about how you interact with Agloe.<br /><br />
+          If you don't wish to share this information with us you can always use Agloe by cloning the GitHub repository and running it locally.
+        </p>
+        <div className={buttonGroup}>
+          <button className={buttonReject} onClick={onSetTrackingPreference(false)}>
+            Reject
+          </button>
+          <button className={buttonAccept} onClick={onSetTrackingPreference(true)}>
+            Accept
+          </button>
+        </div>
       </div>
     </main>
   );
