@@ -1,7 +1,6 @@
 import { AppProps } from 'next/app';
 import { useEffectOnce } from 'react-use';
 import { useRouter } from 'next/router';
-import { storage } from '../constants';
 import mixpanel from 'mixpanel-browser';
 import 'styles/_main.scss';
 
@@ -10,6 +9,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default function App({ Component, pageProps }: AppProps): JSX.Element {
     const router = useRouter();
+
     useEffectOnce(() => {
         if (!mixpanelAppToken) {
           return;
@@ -17,10 +17,12 @@ export default function App({ Component, pageProps }: AppProps): JSX.Element {
 
         mixpanel.init(mixpanelAppToken, { debug: isDevelopment });
 
-        const isAccepted = localStorage.getItem(storage.USAGE_TRACKING_ACCEPTED) === '1';
+        const isUserOptedIn = mixpanel.has_opted_in_tracking() === true;
+        const isUserOptedOut = mixpanel.has_opted_out_tracking() === true;
+        const isPreferenceSet = isUserOptedIn || isUserOptedOut;
 
-        if (!isAccepted) {
-            router.push('/accept');
+        if (!isPreferenceSet) {
+            router.replace('/accept');
         }
     });
 
