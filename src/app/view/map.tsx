@@ -1,11 +1,6 @@
 import { Icon } from 'components/icon';
 import { Map } from 'components/map';
-import {
-  LngLatBounds,
-  LngLatLike,
-  Map as MapLibre,
-  Marker,
-} from 'maplibre-gl';
+import { LngLatBounds, LngLatLike, Map as MapLibre, Marker } from 'maplibre-gl';
 import { css } from 'otion';
 import { useCallback } from 'react';
 import { colors } from 'styles/colors';
@@ -49,8 +44,9 @@ interface MapViewProps {
 }
 
 export function MapView({ entity, onBack }: MapViewProps): JSX.Element {
-  const onLoadAddMark = useCallback((map: MapLibre) => {
-    switch (entity.type) {
+  const onLoadAddMark = useCallback(
+    (map: MapLibre) => {
+      switch (entity.type) {
       case 'node':
         const marker = new Marker();
 
@@ -65,36 +61,42 @@ export function MapView({ entity, onBack }: MapViewProps): JSX.Element {
 
         break;
       case 'way':
-        map.addSource('way', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: entity.nodes.map(({ lon, lat }) => [lon, lat]),
-            }
-          }
-        }).addLayer({
-          id: 'way',
-          type: 'line',
-          source: 'way',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': colors.blue,
-            'line-width': 8
-          }
-        });
+        map
+          .addSource('way', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: entity.nodes.map(({ lon, lat }) => [lon, lat]),
+              },
+            },
+          })
+          .addLayer({
+            id: 'way',
+            type: 'line',
+            source: 'way',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': colors.blue,
+              'line-width': 8,
+            },
+          });
 
-        const startBounds: LngLatLike = [entity.nodes[0].lon, entity.nodes[0].lat];
+        const startBounds: LngLatLike = [
+          entity.nodes[0].lon,
+          entity.nodes[0].lat,
+        ];
         const startLngLatBounds = new LngLatBounds(startBounds, startBounds);
 
-        const bounds = entity.nodes.reduce<LngLatBounds>((bounds, { lon, lat }) => (
-          bounds.extend([lon, lat])
-        ), startLngLatBounds);
+        const bounds = entity.nodes.reduce<LngLatBounds>(
+          (bounds, { lon, lat }) => bounds.extend([lon, lat]),
+          startLngLatBounds
+        );
 
         map.fitBounds(bounds, {
           padding: 40,
@@ -103,8 +105,10 @@ export function MapView({ entity, onBack }: MapViewProps): JSX.Element {
         });
 
         break;
-    }
-  }, []);
+      }
+    },
+    [entity]
+  );
 
   return (
     <div>

@@ -1,5 +1,5 @@
 import { css } from 'otion';
-import {colors} from 'styles/colors';
+import { colors } from 'styles/colors';
 import { typography } from 'styles/typography';
 import { Icon } from './icon';
 
@@ -25,8 +25,8 @@ const icon = css({
   selectors: {
     '& path': {
       fill: '#fafafa',
-    }
-  }
+    },
+  },
 });
 
 const note = css({
@@ -51,7 +51,7 @@ const TYPE_ATTRIBUTES: Record<
     color: string;
     note?: string;
     y?: number;
-    x?: number
+    x?: number;
   }
 > = {
   unknown: {
@@ -197,7 +197,7 @@ const getEntityAttributes = (entity: Entity): keyof typeof TYPE_ATTRIBUTES => {
   }
 
   return 'unknown';
-}
+};
 
 export function Result({ entity }: ResultProps): JSX.Element {
   const type = getEntityAttributes(entity);
@@ -205,10 +205,7 @@ export function Result({ entity }: ResultProps): JSX.Element {
 
   return (
     <div className={result}>
-      <span
-        className={icon}
-        style={{ backgroundColor: attributes.color }}
-      >
+      <span className={icon} style={{ backgroundColor: attributes.color }}>
         <Icon
           name={attributes.icon}
           style={{ marginTop: attributes?.y, marginLeft: attributes?.x }}

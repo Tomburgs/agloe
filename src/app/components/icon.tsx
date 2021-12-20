@@ -11,38 +11,36 @@ const icon = css({
   width: SIZE,
 });
 
-const placeholder = skeleton + css({
-  borderRadius: '50%',
-});
+const placeholder =
+  skeleton +
+  css({
+    borderRadius: '50%',
+  });
 
 interface IconProps {
   name: string;
   className?: string;
   style?: CSSProperties;
-};
+}
 
 const Loader = ({ style, className = '' }: IconProps): JSX.Element => (
-  <span
-    style={style}
-    className={`${icon} ${placeholder} ${className}`}
-  />
+  <span style={style} className={`${icon} ${placeholder} ${className}`} />
 );
 
 export function Icon(props: IconProps): JSX.Element {
-  const {
-    name,
-    className: argClassName = ''
-  } = props;
+  const { name, style, className: argClassName = '' } = props;
   const className = `${icon} ${argClassName}`;
 
-  const element = useMemo(() => (
-    createElement(
-      dynamic<IconProps>(
-        () => import(`icons/${name}.svg`),
-        { loading: () => <Loader { ...props } /> }
+  const element = useMemo(
+    () =>
+      createElement(
+        dynamic<IconProps>(() => import(`icons/${name}.svg`), {
+          loading: () => <Loader name={name} style={style} className={props.className} />,
+        }),
+        { name, style, className }
       ),
-      { ...props, className }
-    )), [name, argClassName]);
+    [name, style, className, props.className]
+  );
 
   return element;
 }

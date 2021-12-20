@@ -18,9 +18,11 @@ const map = css({
   borderRadius: '0 0 10px 10px',
 });
 
-const placeholder = skeleton + css({
-  height: '550px',
-});
+const placeholder =
+  skeleton +
+  css({
+    height: '550px',
+  });
 
 export function Map({ onLoaded }: MapProps): JSX.Element {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -43,7 +45,7 @@ export function Map({ onLoaded }: MapProps): JSX.Element {
          */
         [24.097802639008, 56.943557974387],
         [24.117500782013, 56.953938339056],
-      ]
+      ],
     });
 
     mapInstanceRef.current = map;
@@ -51,13 +53,11 @@ export function Map({ onLoaded }: MapProps): JSX.Element {
       setIsLoaded(true);
       onLoaded?.(map);
     });
-  }, []);
+  }, [onLoaded]);
 
   return (
     <div className={container}>
-      {!isLoaded && (
-        <div className={placeholder} />
-      )}
+      {!isLoaded && <div className={placeholder} />}
       <div
         ref={mapContainerRef}
         className={map}

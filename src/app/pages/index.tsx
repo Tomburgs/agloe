@@ -39,7 +39,10 @@ enum View {
   Map,
 }
 
-const instantiate = async (request: Promise<Response>, importObject: WebAssembly.Imports) => {
+const instantiate = async (
+  request: Promise<Response>,
+  importObject: WebAssembly.Imports
+) => {
   if (WebAssembly.instantiateStreaming) {
     return WebAssembly.instantiateStreaming(request, importObject);
   }
@@ -57,8 +60,7 @@ const useWasm = () => {
     const go = new Go();
     const wasm = fetch('/main.wasm');
 
-    instantiate(wasm, go.importObject)
-    .then(({ instance }) => {
+    instantiate(wasm, go.importObject).then(({ instance }) => {
       go.run(instance);
       setIsInitialized(true);
     });
@@ -76,89 +78,105 @@ export default function Home(): JSX.Element {
   const [search, setSearch] = useState<string>('');
   const [results, setResults] = useState<Entity[][]>([]);
 
-  useDebounce(() => {
-    if (search.length > 1) {
-      setResults([]);
-      searchValueRef.current = search;
+  useDebounce(
+    () => {
+      if (search.length > 1) {
+        setResults([]);
+        searchValueRef.current = search;
 
-      if (streamInstanceRef.current?.locked === false) {
-        streamInstanceRef.current.cancel();
-      }
-
-      streamInstanceRef.current = global.search(search);
-
-      const reader = streamInstanceRef.current.getReader();
-      const state = { matches: 0, maxDist: 0, minDist: 0 };
-      const pushResult = (result: Entity) => {
-        const { rank, search: resultSearchTerm } = result.metadata;
-
-        /*
-         * Did no one tell you that the search term changed, because you are a promise that was too busy resolving?
-         * Well, now we tell you.
-         */
-        if (searchValueRef.current !== resultSearchTerm) {
-          return;
+        if (streamInstanceRef.current?.locked === false) {
+          streamInstanceRef.current.cancel();
         }
 
-        /*
-         * We don't want ALL the results, just the most accurate ones.
-         */
-        if (state.matches > 10 && rank > search.length * 3) {
-          return;
-        }
+        streamInstanceRef.current = global.search(search);
 
-        state.matches++;
+        const reader = streamInstanceRef.current.getReader();
+        const state = { matches: 0, maxDist: 0, minDist: 0 };
+        const pushResult = (result: Entity) => {
+          const { rank, search: resultSearchTerm } = result.metadata;
 
-        if (state.maxDist < rank) {
-          state.maxDist = rank;
-        }
+          /*
+           * Did no one tell you that the search term changed, because you are a promise that was too busy resolving?
+           * Well, now we tell you.
+           */
+          if (searchValueRef.current !== resultSearchTerm) {
+            return;
+          }
 
-        if (state.minDist < rank) {
-          state.minDist = rank;
-        }
+          /*
+           * We don't want ALL the results, just the most accurate ones.
+           */
+          if (state.matches > 10 && rank > search.length * 3) {
+            return;
+          }
 
-        setResults(results => {
-          const clonedResults = [...results];
-          const existingRankResults = results[rank] || [];
-          const rankResults = [...existingRankResults, result];
+          state.matches++;
 
-          clonedResults[rank] = rankResults;
+          if (state.maxDist < rank) {
+            state.maxDist = rank;
+          }
 
-          return clonedResults;
-        });
-      };
-      const processEntities = ({ done, value }: ReadableStreamDefaultReadResult<Entity>): void => {
-        if (done) {
-          return;
-        }
+          if (state.minDist < rank) {
+            state.minDist = rank;
+          }
 
-        if (value instanceof Promise) {
-          value.then(pushResult);
-        } else if (value) {
-          pushResult(value);
-        }
+          setResults((results) => {
+            const clonedResults = [...results];
+            const existingRankResults = results[rank] || [];
+            const rankResults = [...existingRankResults, result];
+
+            clonedResults[rank] = rankResults;
+
+            return clonedResults;
+          });
+        };
+        const processEntities = ({
+          done,
+          value,
+        }: ReadableStreamDefaultReadResult<Entity>): void => {
+          if (done) {
+            return;
+          }
+
+          if (value instanceof Promise) {
+            value.then(pushResult);
+          } else if (value) {
+            pushResult(value);
+          }
+
+          reader.read().then(processEntities);
+        };
 
         reader.read().then(processEntities);
-      };
+      }
+    },
+    200,
+    [search]
+  );
 
-      reader.read().then(processEntities);
-    }
-  }, 200, [search]);
+  useDebounce(
+    () => {
+      if (search.length > 1) {
+        mixpanel.track('Search', {
+          'Search Term': search,
+        });
+      }
+    },
+    1000,
+    [search]
+  );
 
-  useDebounce(() => {
-    if (search.length > 1) {
-      mixpanel.track('Search', {
-        'Search Term': search,
-      });
-    }
-  }, 1000, [search]);
+  const onSearch = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const {
+        target: { value },
+      } = event;
 
-  const onSearch = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const { target: { value } } = event;
-
-    setSearch(value);
-    setResults([]);
-  }, [setSearch, setResults]);
+      setSearch(value);
+      setResults([]);
+    },
+    [setSearch, setResults]
+  );
 
   const onSelect = useCallback((entity: Entity) => {
     setSelected(entity);
@@ -189,13 +207,16 @@ export default function Home(): JSX.Element {
             results={results}
           />
         )}
-        {view === View.Map && (
-          <MapView entity={selected!} onBack={onBack} />
-        )}
+        {view === View.Map && <MapView entity={selected!} onBack={onBack} />}
       </div>
       <h6 className={credit}>
-          Made with <Icon name="heart" /> in Copenhagen.<br />
-          By <a href="https://github.com/Tomburgs" rel="noreferrer">@Tomburgs</a>.
+        Made with <Icon name="heart" /> in Copenhagen.
+        <br />
+        By{' '}
+        <a href="https://github.com/Tomburgs" rel="noreferrer">
+          @Tomburgs
+        </a>
+        .
       </h6>
     </main>
   );

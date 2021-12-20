@@ -8,25 +8,23 @@ const mixpanelAppToken = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export default function App({ Component, pageProps }: AppProps): JSX.Element {
-    const router = useRouter();
+  const router = useRouter();
 
-    useEffectOnce(() => {
-        if (!mixpanelAppToken) {
-          return;
-        }
+  useEffectOnce(() => {
+    if (!mixpanelAppToken) {
+      return;
+    }
 
-        mixpanel.init(mixpanelAppToken, { debug: isDevelopment });
+    mixpanel.init(mixpanelAppToken, { debug: isDevelopment });
 
-        const isUserOptedIn = mixpanel.has_opted_in_tracking() === true;
-        const isUserOptedOut = mixpanel.has_opted_out_tracking() === true;
-        const isPreferenceSet = isUserOptedIn || isUserOptedOut;
+    const isUserOptedIn = mixpanel.has_opted_in_tracking() === true;
+    const isUserOptedOut = mixpanel.has_opted_out_tracking() === true;
+    const isPreferenceSet = isUserOptedIn || isUserOptedOut;
 
-        if (!isPreferenceSet) {
-            router.replace('/accept');
-        }
-    });
+    if (!isPreferenceSet) {
+      router.replace('/accept');
+    }
+  });
 
-    return (
-        <Component { ...pageProps } />
-    );
+  return <Component {...pageProps} />;
 }
