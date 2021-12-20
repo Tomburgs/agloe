@@ -5,21 +5,21 @@ import { ChangeEventHandler } from 'react';
 import { typography } from 'styles/typography';
 
 const input = css({
-    boxSizing: 'border-box',
-    backgroundColor: '#fafafa',
-    borderRadius: '10px 10px 0 0',
-    padding: '0 20px 0 52px',
-    fontSize: typography.size[1],
-    height: '50px',
-    width: '100%',
-    border: 'none',
-    color: '#2E3A59',
-    outline: 'none',
-    selectors: {
-      '&::placeholder': {
-        color: typography.color.tertiary,
-      },
+  boxSizing: 'border-box',
+  backgroundColor: '#fafafa',
+  borderRadius: '10px 10px 0 0',
+  padding: '0 20px 0 52px',
+  fontSize: typography.size[1],
+  height: '50px',
+  width: '100%',
+  border: 'none',
+  color: '#2E3A59',
+  outline: 'none',
+  selectors: {
+    '&::placeholder': {
+      color: typography.color.tertiary,
     },
+  },
 });
 
 const result = css({
@@ -79,7 +79,13 @@ interface SearchViewProps {
   results: Entity[][];
 }
 
-export function SearchView({ search, onSearch, onSelect, disabled, results }: SearchViewProps): JSX.Element {
+export function SearchView({
+  search,
+  onSearch,
+  onSelect,
+  disabled,
+  results,
+}: SearchViewProps): JSX.Element {
   return (
     <>
       <div className={container}>
@@ -97,22 +103,29 @@ export function SearchView({ search, onSearch, onSelect, disabled, results }: Se
         />
       </div>
       <ul className={list}>
-          {search === '' && results.length === 0 && (
-            <p className={help}>
-              Here are some search ideas: <br />
-              Art, Tea, Restorāns, Cafe, Teātris...
-            </p>
-          )}
-          {search !== '' && results.length === 0 && (
-            <p className={help}>
-              Looks like we couldn't find what you were looking for 🥴
-            </p>
-          )}
-          {results.flat().map((entity) => entity && (
-            <li key={entity.id} className={result} onClick={() => onSelect(entity)}>
-              <Result key={entity.id} entity={entity} />
-            </li>
-          ))}
+        {search === '' && results.length === 0 && (
+          <p className={help}>
+            Here are some search ideas: <br />
+            Art, Tea, Restorāns, Cafe, Teātris...
+          </p>
+        )}
+        {search !== '' && results.length === 0 && (
+          <p className={help}>
+            Looks like we couldn't find what you were looking for 🥴
+          </p>
+        )}
+        {results.flat().map(
+          (entity) =>
+            entity && (
+              <li
+                key={entity.id}
+                className={result}
+                onClick={() => onSelect(entity)}
+              >
+                <Result key={entity.id} entity={entity} />
+              </li>
+            )
+        )}
       </ul>
     </>
   );

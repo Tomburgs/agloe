@@ -1,32 +1,37 @@
 {
-    "name": "agloe-app",
-    "private": true,
-    "version": "1.0.0",
-    "author": "Toms Burgmanis <toms.burgmanis@gmail.com>",
-    "license": "MIT",
-    "scripts": {
-        "dev": "NODE_ENV=development next",
-        "start": "NODE_ENV=production next start",
-        "build-frontend": "next build"
-    },
-    "dependencies": {
-        "maplibre-gl": "^1.15.2",
-        "mixpanel-browser": "^2.42.0",
-        "next": "^12.0.6",
-        "otion": "^0.6.2",
-        "react": "^17.0.1",
-        "react-dom": "^17.0.1",
-        "react-use": "^17.3.1",
-        "sass": "^1.32.5",
-        "typescript": "^4.1.3"
-    },
-    "devDependencies": {
-        "@svgr/webpack": "^6.1.0",
-        "@types/css-modules": "^1.0.1",
-        "@types/golang-wasm": "^1.15.0",
-        "@types/mixpanel-browser": "^2.36.0",
-        "@types/node": "^14.14.22",
-        "@types/react": "^17.0.0",
-        "@types/react-dom": "^17.0.0"
-    }
+  "name": "agloe-app",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Toms Burgmanis <toms.burgmanis@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "NODE_ENV=development next",
+    "start": "NODE_ENV=production next start",
+    "build-frontend": "next build",
+    "lint": "next lint",
+    "prettier": "prettier --check ."
+  },
+  "dependencies": {
+    "maplibre-gl": "^1.15.2",
+    "mixpanel-browser": "^2.42.0",
+    "next": "^12.0.6",
+    "otion": "^0.6.2",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-use": "^17.3.1",
+    "sass": "^1.32.5",
+    "typescript": "^4.1.3"
+  },
+  "devDependencies": {
+    "@svgr/webpack": "^6.1.0",
+    "@types/css-modules": "^1.0.1",
+    "@types/golang-wasm": "^1.15.0",
+    "@types/mixpanel-browser": "^2.36.0",
+    "@types/node": "^14.14.22",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "eslint": "^8.5.0",
+    "eslint-config-next": "12.0.7",
+    "prettier": "2.5.1"
+  }
 }

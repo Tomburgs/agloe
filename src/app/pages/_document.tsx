@@ -5,7 +5,7 @@ export default class Document extends SourceDocument {
     return (
       <Html lang="en">
         <Head>
-          <script src="/wasm_exec.js" />
+          <script async src="/wasm_exec.js" />
         </Head>
         <body>
           <Main />
