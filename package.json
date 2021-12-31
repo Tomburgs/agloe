@@ -12,9 +12,9 @@
     "scripts": {
         "dev": "cd src/app && NODE_ENV=development next",
         "start": "cd src/app && NODE_ENV=production next start",
-        "build": "build-go && build-frontend",
         "build-frontend": "cd src/app && next build",
-        "build-go": "cd src/go && GOOS=js GOARCH=wasm go build -o ../app/public/main.wasm"
+        "build-go": "cd src/go && GOOS=js GOARCH=wasm go build -o ../app/public/main.wasm",
+        "build": "yarn build-go && yarn build-frontend"
     },
     "dependencies": {}
 }
