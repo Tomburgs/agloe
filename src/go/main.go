@@ -1,14 +1,18 @@
 package main
 
 import (
-	"github.com/Tomburgs/agloe/idb"
-	"github.com/Tomburgs/agloe/parser"
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"strings"
+	"sync"
 	"syscall/js"
 	"time"
+
+	"github.com/Tomburgs/agloe/dbutil"
+	"github.com/Tomburgs/agloe/parser"
+	"github.com/hack-pad/go-indexeddb/idb"
 
 	"github.com/qedus/osmpbf"
 )
@@ -16,11 +20,11 @@ import (
 const DEFAULT_FILENAME = "oldtown.osm.pbf"
 
 var p *parser.Parser
-var db *idb.IDB
+var db *idb.Database
 var searchTerm string
 
 func main() {
-    db = idb.NewDB();
+    db = dbutil.NewDBConnection()
 
     index(db)
 
@@ -51,6 +55,7 @@ type RelStruct struct{
 func createPromiseRequest(request func (resolve js.Value, args ...interface{}), passed ...interface{}) js.Value {
     handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
         resolve := args[0]
+
         go request(resolve, passed...)
         return nil
     })
@@ -69,31 +74,38 @@ func stream(this js.Value, args []js.Value) interface{} {
         node := arg[0].(*osmpbf.Way)
         rank := arg[1].(int)
 
-        handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
-            resolved := []LatLon{}
-            entries := args[0]
+        resolved := []LatLon{}
 
-            entries.Call("forEach", js.FuncOf(func (this js.Value, args []js.Value) interface{} {
-                entry := args[0]
+        txn, _ := db.Transaction(idb.TransactionReadOnly, dbutil.DBObjectStoreRel)
+        store, _ := txn.ObjectStore(dbutil.DBObjectStoreRel)
+        index, _ := store.Index(dbutil.DBObjectStoreRelIndex)
 
-                resolved = append(resolved, LatLon{entry.Get("lat").Float(), entry.Get("lon").Float()})
+        wg := new(sync.WaitGroup)
+        wg.Add(len(node.NodeIDs))
 
-                return nil
-            }))
+        for _, nodeId := range node.NodeIDs {
+            ctx := context.Background()
+            req, _ := index.Get(js.ValueOf(nodeId))
 
-            way := createWay(node, resolved, rank, term)
+            req.ListenSuccess(
+                ctx,
+                func() {
+                    entry, _ := req.Result()
+                    resolved = append(resolved, LatLon{entry.Get("lat").Float(), entry.Get("lon").Float()})
+                    wg.Done()
+                },
+            )
+        }
 
-            resolve.Invoke(way)
+        wg.Wait()
 
-            elapsed := time.Since(start)
-            fmt.Printf("Executed for %d in %s\n", node.ID, elapsed)
+        way := createWay(node, resolved, rank, term)
+        resolve.Invoke(way)
 
-            return nil
-        })
+        elapsed := time.Since(start)
+        fmt.Printf("Executed for %d in %s\n", node.ID, elapsed)
 
-        transaction := db.NewTransaction("readonly")
-        transaction.GetMany(node.NodeIDs, handler)
-        defer transaction.Commit()
+        defer txn.Commit()
     }
 
     go func() {

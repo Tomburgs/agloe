@@ -1,22 +1,25 @@
 package main
 
 import (
-	"github.com/Tomburgs/agloe/batch"
-	"github.com/Tomburgs/agloe/bitmask"
-	"github.com/Tomburgs/agloe/idb"
-	"github.com/Tomburgs/agloe/parser"
 	"io"
 	"log"
+	"syscall/js"
+
+	"github.com/Tomburgs/agloe/batch"
+	"github.com/Tomburgs/agloe/bitmask"
+	"github.com/Tomburgs/agloe/dbutil"
+	"github.com/Tomburgs/agloe/parser"
+	"github.com/hack-pad/go-indexeddb/idb"
 	"github.com/qedus/osmpbf"
 )
 
-func index(idb *idb.IDB) {
+func index(db *idb.Database) {
     bitmask := bitmask.NewBitmask()
 
     findWayRelatedNodes(&bitmask)
 
     if (len(bitmask) > 0) {
-        indexNodes(&bitmask, idb)
+        indexNodes(&bitmask, db)
     }
 }
 
@@ -52,15 +55,16 @@ func findWayRelatedNodes(mask *bitmask.Bitmask) {
 /*
  * Adds registered nodes in Bitmask to IndexedDB
  */
-func indexNodes(mask *bitmask.Bitmask, db *idb.IDB) {
+func indexNodes(mask *bitmask.Bitmask, db *idb.Database) {
     writer := batch.WriterFunc(func (batch []interface{}) {
-        transaction := db.NewTransaction("readwrite")
+        txn, _ := db.Transaction(idb.TransactionReadWrite, dbutil.DBObjectStoreRel)
+        store, _ := txn.ObjectStore(dbutil.DBObjectStoreRel)
 
         for _, entry := range batch {
-            transaction.SetIndex(entry)
+            store.Add(js.ValueOf(entry))
         }
 
-        transaction.Commit()
+        defer txn.Commit()
     })
     p := parser.NewParser()
     b := batch.NewBatcher(writer, 256, 0)
