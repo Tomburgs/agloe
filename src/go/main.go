@@ -24,122 +24,122 @@ var db *idb.Database
 var searchTerm string
 
 func main() {
-    db = dbutil.NewDBConnection()
+	db = dbutil.NewDBConnection()
 
-    index(db)
+	index(db)
 
-    js.Global().Set("search", js.FuncOf(search))
+	js.Global().Set("search", js.FuncOf(search))
 
-    select {}
+	select {}
 }
 
 func search(this js.Value, args []js.Value) interface{} {
-    search := args[0].String()
-    searchTerm = search
-    p = parser.NewParser()
-    p.SetSearch(strings.ToLower(search))
+	search := args[0].String()
+	searchTerm = search
+	p = parser.NewParser()
+	p.SetSearch(strings.ToLower(search))
 
-    readableStream := js.Global().Get("ReadableStream")
-    readableStreamConstructor := map[string]interface{}{
-        "start": js.FuncOf(stream),
-    }
+	readableStream := js.Global().Get("ReadableStream")
+	readableStreamConstructor := map[string]interface{}{
+		"start": js.FuncOf(stream),
+	}
 
-    return readableStream.New(readableStreamConstructor)
+	return readableStream.New(readableStreamConstructor)
 }
 
-type RelStruct struct{
-    id int64
-    nodes []int64
+type RelStruct struct {
+	id    int64
+	nodes []int64
 }
 
-func createPromiseRequest(request func (resolve js.Value, args ...interface{}), passed ...interface{}) js.Value {
-    handler := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
-        resolve := args[0]
+func createPromiseRequest(request func(resolve js.Value, args ...interface{}), passed ...interface{}) js.Value {
+	handler := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		resolve := args[0]
 
-        go request(resolve, passed...)
-        return nil
-    })
+		go request(resolve, passed...)
+		return nil
+	})
 
-    promise := js.Global().Get("Promise")
+	promise := js.Global().Get("Promise")
 
-    return promise.New(handler)
+	return promise.New(handler)
 }
 
 func stream(this js.Value, args []js.Value) interface{} {
-    controller := args[0]
-    start := time.Now()
-    term := searchTerm
+	controller := args[0]
+	start := time.Now()
+	term := searchTerm
 
-    lookupWayNodes := func (resolve js.Value, arg ...interface{}) {
-        node := arg[0].(*osmpbf.Way)
-        rank := arg[1].(int)
+	lookupWayNodes := func(resolve js.Value, arg ...interface{}) {
+		node := arg[0].(*osmpbf.Way)
+		rank := arg[1].(int)
 
-        resolved := []LatLon{}
+		resolved := []LatLon{}
 
-        txn, _ := db.Transaction(idb.TransactionReadOnly, dbutil.DBObjectStoreRel)
-        store, _ := txn.ObjectStore(dbutil.DBObjectStoreRel)
-        index, _ := store.Index(dbutil.DBObjectStoreRelIndex)
+		txn, _ := db.Transaction(idb.TransactionReadOnly, dbutil.DBObjectStoreRel)
+		store, _ := txn.ObjectStore(dbutil.DBObjectStoreRel)
+		index, _ := store.Index(dbutil.DBObjectStoreRelIndex)
 
-        wg := new(sync.WaitGroup)
-        wg.Add(len(node.NodeIDs))
+		wg := new(sync.WaitGroup)
+		wg.Add(len(node.NodeIDs))
 
-        for _, nodeId := range node.NodeIDs {
-            ctx := context.Background()
-            req, _ := index.Get(js.ValueOf(nodeId))
+		for _, nodeId := range node.NodeIDs {
+			ctx := context.Background()
+			req, _ := index.Get(js.ValueOf(nodeId))
 
-            req.ListenSuccess(
-                ctx,
-                func() {
-                    entry, _ := req.Result()
-                    resolved = append(resolved, LatLon{entry.Get("lat").Float(), entry.Get("lon").Float()})
-                    wg.Done()
-                },
-            )
-        }
+			req.ListenSuccess(
+				ctx,
+				func() {
+					entry, _ := req.Result()
+					resolved = append(resolved, LatLon{entry.Get("lat").Float(), entry.Get("lon").Float()})
+					wg.Done()
+				},
+			)
+		}
 
-        wg.Wait()
+		wg.Wait()
 
-        way := createWay(node, resolved, rank, term)
-        resolve.Invoke(way)
+		way := createWay(node, resolved, rank, term)
+		resolve.Invoke(way)
 
-        elapsed := time.Since(start)
-        fmt.Printf("Executed for %d in %s\n", node.ID, elapsed)
+		elapsed := time.Since(start)
+		fmt.Printf("Executed for %d in %s\n", node.ID, elapsed)
 
-        defer txn.Commit()
-    }
+		defer txn.Commit()
+	}
 
-    go func() {
-        p.FetchFile(DEFAULT_FILENAME)
-        p.StartDecoder()
+	go func() {
+		p.FetchFile(DEFAULT_FILENAME)
+		p.StartDecoder()
 
-        defer p.Close()
+		defer p.Close()
 
-        for {
-            entity, rank, err := p.Parse()
+		for {
+			entity, rank, err := p.Parse()
 
-            if err == io.EOF {
-                controller.Call("close")
-                break
-            } else if err != nil {
-                log.Fatal(err)
-            } else {
-                switch entity := entity.(type) {
-                case *osmpbf.Node:
-                    node := createNode(entity, rank, term)
-                    controller.Call("enqueue", node)
-                case *osmpbf.Way:
-                    promise := createPromiseRequest(lookupWayNodes, entity, rank)
-                    controller.Call("enqueue", promise)
-                case *osmpbf.Relation:
-                    // TODO: Create relations entity
-                }
-            }
-        }
+			if err == io.EOF {
+				controller.Call("close")
+				break
+			} else if err != nil {
+				log.Fatal(err)
+			} else {
+				switch entity := entity.(type) {
+				case *osmpbf.Node:
+					node := createNode(entity, rank, term)
+					controller.Call("enqueue", node)
+				case *osmpbf.Way:
+					promise := createPromiseRequest(lookupWayNodes, entity, rank)
+					controller.Call("enqueue", promise)
+				case *osmpbf.Relation:
+					// TODO: Create relations entity
+				}
+			}
+		}
 
-        elapsed := time.Since(start)
+		elapsed := time.Since(start)
 
-        fmt.Printf("Executed in %s\n", elapsed)
-    }()
+		fmt.Printf("Executed in %s\n", elapsed)
+	}()
 
-    return nil
+	return nil
 }

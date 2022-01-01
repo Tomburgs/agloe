@@ -14,7 +14,10 @@
         "start": "cd src/app && NODE_ENV=production next start",
         "build-frontend": "cd src/app && next build",
         "build-go": "cd src/go && GOOS=js GOARCH=wasm go build -o ../app/public/main.wasm",
-        "build": "yarn build-go && yarn build-frontend"
+        "build": "yarn build-go && yarn build-frontend",
+        "lint-frontend": "cd src/app && yarn lint",
+        "lint-go": "cd src/go && gofmt -w .",
+        "lint": "yarn lint-frontend && yarn lint-go"
     },
     "dependencies": {}
 }
